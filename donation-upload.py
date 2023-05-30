@@ -1,4 +1,3 @@
-import xlrd
 import openpyxl
 import requests
 import pickle
