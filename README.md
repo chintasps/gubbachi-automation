@@ -22,5 +22,5 @@ With large number of donation data, it is cumbersome to go via the UI flow and f
 
 
 ## Bugs & Improvments
-Please add feedback, feature requests and bugs to the todo file in this repo. 
+Please add feedback, feature requests and bugs to the [todo](./todo) file in this repo. 
 
