@@ -20,3 +20,7 @@ With large number of donation data, it is cumbersome to go via the UI flow and f
     `python3 donation-upload.py`
 6. When you receive more donation data keep adding to the excel. The status column in the excel denotes whether the donation data was uploaded to danamojo or not. If the cell is having a value of 'COMPLETED' or 'FAILED', the donation data will not be updated again. 
 
+
+## Bugs & Improvments
+Please add feedback, feature requests and bugs to the todo file in this repo. 
+
