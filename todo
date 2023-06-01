@@ -1,4 +1,13 @@
 #TODO
 1. Remove noticeable names from the excel file
 2. Redirect logs to a file
-3. Deyone comments ?? Please add here
+3. Add authentication to each form field
+  a. Phone number must be 10 digit number without decimal(excel adds decimal to numbers based on column format)
+  b. Date should be valid
+  c. Any limit on the number of characters or type of characters for name / address
+  d. Authentication for PAN - 10 digit alphanumeric
+  e. PIN - 6 digit number
+  f. Nationality - finding the list of countries in the web ui and comparing is just too much work at this tme. We ll just check for alphabets without numberic or special chars
+  g. All fields - should not be none/null and length should be greated than 0
+  h. When authentication fails a neat message without exceptions or stack traces.
+4. Deyone comments ?? Please add here
