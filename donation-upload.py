@@ -102,44 +102,48 @@ def main():
 
     # Read from Excel
     
-    excel_filename = "donation2.xlsx"
+    excel_filename = "donation.xlsx"
     logging.debug(f"Loading excel: {excel_filename}")
     wb_obj = openpyxl.load_workbook(excel_filename)
     logging.debug("Opening  active  excel sheet")
     sheet_obj = wb_obj.active
     row_count = sheet_obj.max_row
-    logging.debug(f"Row count: {row_count}")
+    logging.info(f"Row count(including headers): {row_count}")
     for i in range(2, row_count + 1):
         donation = Donation()
-        amount = sheet_obj.cell(row = i, column = 1)
+        rowSerialNumber = sheet_obj.cell(row = i, column = 1)
+        if rowSerialNumber.value == None or rowSerialNumber.value == "":
+            logging.info(f"Possible empty row found at excel row count: {i}. No serial number found. Assuming end of file and exiting.")
+            exit()
+        amount = sheet_obj.cell(row = i, column = 2)
         donation.amount = amount.value
-        name = sheet_obj.cell(row = i, column = 2)
+        name = sheet_obj.cell(row = i, column = 3)
         donation.name = name.value
-        nationality = sheet_obj.cell(row = i, column = 3)
+        nationality = sheet_obj.cell(row = i, column = 4)
         donation.nationality = nationality.value
-        address = sheet_obj.cell(row = i, column = 4)
+        address = sheet_obj.cell(row = i, column = 5)
         donation.address = address.value
-        pin = sheet_obj.cell(row = i, column = 5)
+        pin = sheet_obj.cell(row = i, column = 6)
         donation.pin = pin.value
-        country = sheet_obj.cell(row = i, column = 6)
+        country = sheet_obj.cell(row = i, column = 7)
         donation.country = country.value
-        state = sheet_obj.cell(row = i, column = 7)
+        state = sheet_obj.cell(row = i, column = 8)
         donation.state = state.value
-        city = sheet_obj.cell(row = i, column = 8)
+        city = sheet_obj.cell(row = i, column = 9)
         donation.city = city.value
-        pan = sheet_obj.cell(row = i, column = 9)
+        pan = sheet_obj.cell(row = i, column = 10)
         donation.pan = pan.value
-        email = sheet_obj.cell(row = i, column = 10)
+        email = sheet_obj.cell(row = i, column = 11)
         donation.email = email.value
-        mobile = sheet_obj.cell(row = i, column = 11)
+        mobile = sheet_obj.cell(row = i, column = 12)
         donation.mobile = mobile.value
-        transaction_number = sheet_obj.cell(row = i, column = 12)
+        transaction_number = sheet_obj.cell(row = i, column = 13)
         donation.transaction_number = transaction_number.value
-        transaction_date = sheet_obj.cell(row = i, column = 13)
+        transaction_date = sheet_obj.cell(row = i, column = 14)
         donation.transaction_date = transaction_date.value
-        reference_number = sheet_obj.cell(row = i, column = 14)
+        reference_number = sheet_obj.cell(row = i, column = 15)
         donation.reference_number = reference_number.value
-        status = sheet_obj.cell(row = i, column = 15)
+        status = sheet_obj.cell(row = i, column = 16)
         donation.status = status.value
 
         # Validate excel row
