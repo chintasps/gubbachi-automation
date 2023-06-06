@@ -1,3 +1,4 @@
+import xlrd
 import openpyxl
 import requests
 import pickle
@@ -9,7 +10,76 @@ import time
 
 
 class Donation:
-    pass
+
+    def __init__(self):
+        self.name = ""
+        self.address = ""
+        self.nationality = ""
+        self.pin = 0
+        self.country = ""
+        self.state = ""
+        self.city = ""
+        self.pan = ""
+        self.email = ""
+        self.mobile = 0
+        self.transaction_number = 0
+        self.ip = requests.get('https://ipapi.co/ip/').text # Possibly expensive. But I dont think any more complexity is needed for this project at this time
+        self._transaction_date = ""
+
+
+    @property
+    def transaction_date(self):
+        return self._transaction_date
+    
+    @transaction_date.setter
+    def transaction_date(self, transaction_date):
+        if transaction_date != None:
+            try:
+                self._transaction_date = transaction_date.strftime("%Y-%m-%d")
+            except:
+                logging.error(f"Transaction date is not 'date' type. {transaction_date}. Please correct the transaction date in the excel and try again. Exiting Program.")
+                exit()
+        else:
+            logging.error("Transaction date is None. Please correct transaction date and try again. Exiting Program")
+            exit()
+
+    def validate(self):
+        if self.name == None or len(self.name) < 1:
+            logging.error("Donor name is None.")
+            return False
+        elif self.address == None or len(self.address) < 1:
+            logging.error("Donor address name is None.")
+            return False
+        elif self.nationality == None or len(self.nationality) < 1:
+            logging.error("Donor nationality is None.")
+            return False
+        elif self.pin == None or type(self.pin) is not int or len(str(self.pin)) != 6:
+            logging.error(f"Donor pin code is invalid. Pin: {self.pin}")
+            return False
+        elif self.country == None or len(self.country) < 1:
+            logging.error(f"Donor country is invalid.")
+            return False
+        elif self.state == None or len(self.state) < 1:
+            logging.error(f"Donor state is invalid.")
+            return False
+        elif self.city == None or len(self.city) < 1:
+            logging.error(f"Donor city is invalid.")
+            return False
+        elif self.pan == None or len(self.pan) != 10:
+            logging.error(f"Donor pan is invalid. Pan {self.pan}")
+            return False
+        elif self.email == None or len(self.email) < 1:
+            logging.error(f"Donor email is invalid. Email: {self.email}")
+            return False
+        elif self.mobile == None or len(str(self.mobile)) != 10:
+            logging.error(f"Donor mobile is invalid. Mobile: {self.mobile}")
+            return False
+        elif self.transaction_number == None or type(self.transaction_number) is not int:
+            logging.error(f"Donation transacton number is invalid. Transaction #: {self.transaction_number}")
+            return False
+        return True
+        
+        
 
 extensive_logging_enabled = False
 
@@ -27,12 +97,12 @@ def main():
         # print statements from `http.client.HTTPConnection` to console/stdout
         HTTPConnection.debuglevel = 1
     
-    logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
+    logging.basicConfig(format='%(asctime)s [%(levelname)s] - %(message)s', level=logging.INFO)
 
 
     # Read from Excel
     
-    excel_filename = "donation.xlsx"
+    excel_filename = "donation2.xlsx"
     logging.debug(f"Loading excel: {excel_filename}")
     wb_obj = openpyxl.load_workbook(excel_filename)
     logging.debug("Opening  active  excel sheet")
@@ -66,14 +136,16 @@ def main():
         transaction_number = sheet_obj.cell(row = i, column = 12)
         donation.transaction_number = transaction_number.value
         transaction_date = sheet_obj.cell(row = i, column = 13)
-        donation.transaction_date = transaction_date.value.strftime("%Y-%m-%d");
-        #print("Date type is ", type(donation.transaction_date))
-        #print("Transaction Date:" , donation.transaction_date)
+        donation.transaction_date = transaction_date.value
         reference_number = sheet_obj.cell(row = i, column = 14)
         donation.reference_number = reference_number.value
         status = sheet_obj.cell(row = i, column = 15)
         donation.status = status.value
-        donation.ip = "61.3.175.44"
+
+        # Validate excel row
+        if not donation.validate():
+            logging.error(f"Validation failed for row: {i}. Correct error above and try again. Exiting Program.")
+            exit()
         # TODO donation.ip= 
         if donation.status != "COMPLETED" and donation.status != "FAILED":
             openIframe()
@@ -100,7 +172,6 @@ def main():
             
         else:
             logging.info(f"Not considering an already completed or failed row: {i}")
-
 
 def openIframe():
     logging.debug("Opening danamojo iframe")
@@ -418,7 +489,7 @@ def sendPost(url, headers, data):
     return resp.text, resp.status_code
 
 def sendGet(url, headers, loadCookiesFromFile):
-    logging.debug(f"Sending POST :{url} ")
+    logging.debug(f"Sending GET :{url} ")
     if loadCookiesFromFile:
         resp = requests.get(url, cookies=loadCookies("cookies_py"), headers=headers)
         logging.debug(f"Saving Cookies")
