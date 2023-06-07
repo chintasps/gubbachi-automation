@@ -1,4 +1,3 @@
-import xlrd
 import openpyxl
 import requests
 import pickle
@@ -12,6 +11,7 @@ import time
 class Donation:
 
     def __init__(self):
+        self.amount = 0
         self.name = ""
         self.address = ""
         self.nationality = ""
@@ -44,7 +44,10 @@ class Donation:
             exit()
 
     def validate(self):
-        if self.name == None or len(self.name) < 1:
+        if self.amount == None or self.amount < 500:
+            logging.error("Donation anount should not be less then Rs. 500")
+            return False
+        elif self.name == None or len(self.name) < 1:
             logging.error("Donor name is None.")
             return False
         elif self.address == None or len(self.address) < 1:
@@ -53,7 +56,7 @@ class Donation:
         elif self.nationality == None or len(self.nationality) < 1:
             logging.error("Donor nationality is None.")
             return False
-        elif self.pin == None or type(self.pin) is not int or len(str(self.pin)) != 6:
+        elif self.pin == None or len(str(self.pin)) != 6:
             logging.error(f"Donor pin code is invalid. Pin: {self.pin}")
             return False
         elif self.country == None or len(self.country) < 1:
@@ -74,7 +77,7 @@ class Donation:
         elif self.mobile == None or len(str(self.mobile)) != 10:
             logging.error(f"Donor mobile is invalid. Mobile: {self.mobile}")
             return False
-        elif self.transaction_number == None or type(self.transaction_number) is not int:
+        elif self.transaction_number == None:
             logging.error(f"Donation transacton number is invalid. Transaction #: {self.transaction_number}")
             return False
         return True
@@ -115,43 +118,44 @@ def main():
         if rowSerialNumber.value == None or rowSerialNumber.value == "":
             logging.info(f"Possible empty row found at excel row count: {i}. No serial number found. Assuming end of file and exiting.")
             exit()
-        amount = sheet_obj.cell(row = i, column = 2)
-        donation.amount = amount.value
-        name = sheet_obj.cell(row = i, column = 3)
-        donation.name = name.value
-        nationality = sheet_obj.cell(row = i, column = 4)
-        donation.nationality = nationality.value
-        address = sheet_obj.cell(row = i, column = 5)
-        donation.address = address.value
-        pin = sheet_obj.cell(row = i, column = 6)
-        donation.pin = pin.value
-        country = sheet_obj.cell(row = i, column = 7)
-        donation.country = country.value
-        state = sheet_obj.cell(row = i, column = 8)
-        donation.state = state.value
-        city = sheet_obj.cell(row = i, column = 9)
-        donation.city = city.value
-        pan = sheet_obj.cell(row = i, column = 10)
-        donation.pan = pan.value
-        email = sheet_obj.cell(row = i, column = 11)
-        donation.email = email.value
-        mobile = sheet_obj.cell(row = i, column = 12)
-        donation.mobile = mobile.value
-        transaction_number = sheet_obj.cell(row = i, column = 13)
-        donation.transaction_number = transaction_number.value
-        transaction_date = sheet_obj.cell(row = i, column = 14)
-        donation.transaction_date = transaction_date.value
-        reference_number = sheet_obj.cell(row = i, column = 15)
-        donation.reference_number = reference_number.value
         status = sheet_obj.cell(row = i, column = 16)
         donation.status = status.value
-
-        # Validate excel row
-        if not donation.validate():
-            logging.error(f"Validation failed for row: {i}. Correct error above and try again. Exiting Program.")
-            exit()
-        # TODO donation.ip= 
         if donation.status != "COMPLETED" and donation.status != "FAILED":
+            amount = sheet_obj.cell(row = i, column = 2)
+            donation.amount = amount.value
+            name = sheet_obj.cell(row = i, column = 3)
+            donation.name = name.value
+            nationality = sheet_obj.cell(row = i, column = 4)
+            donation.nationality = nationality.value
+            address = sheet_obj.cell(row = i, column = 5)
+            donation.address = address.value
+            pin = sheet_obj.cell(row = i, column = 6)
+            donation.pin = pin.value
+            country = sheet_obj.cell(row = i, column = 7)
+            donation.country = country.value
+            state = sheet_obj.cell(row = i, column = 8)
+            donation.state = state.value
+            city = sheet_obj.cell(row = i, column = 9)
+            donation.city = city.value
+            pan = sheet_obj.cell(row = i, column = 10)
+            donation.pan = pan.value
+            email = sheet_obj.cell(row = i, column = 11)
+            donation.email = email.value
+            mobile = sheet_obj.cell(row = i, column = 12)
+            donation.mobile = mobile.value
+            transaction_number = sheet_obj.cell(row = i, column = 13)
+            donation.transaction_number = transaction_number.value
+            transaction_date = sheet_obj.cell(row = i, column = 14)
+            donation.transaction_date = transaction_date.value
+            reference_number = sheet_obj.cell(row = i, column = 15)
+            donation.reference_number = reference_number.value
+
+
+            # Validate excel row
+            if not donation.validate():
+                logging.error(f"Validation failed for row: {i}. Correct error above and try again. Exiting Program.")
+                exit()
+
             openIframe()
             updateDonationAmount(amount.value)
             csrf_token, dm_token, csrf_payment_token = loadFormPage()
@@ -159,7 +163,7 @@ def main():
             donation.dm_token = dm_token
             donation.csrf_payment_token = csrf_payment_token
             if donation.csrf_token == None or donation.dm_token == None or donation.csrf_payment_token == None:
-                sheet_obj.cell(row=i, column=15).value = "COMPLETED"
+                sheet_obj.cell(row=i, column=16).value = "FAILED"
                 logging.info(f"Row: {i} , donor: {donation.name} Failed")
             else:
                 form_content = frameFormResponse(donation)
@@ -169,8 +173,8 @@ def main():
                 donation_reference_number = submitPaymentInfo(csrf_payment_token, donation_info_id, donation.transaction_date, donation.transaction_number)
                 donation.donation_reference_number = donation_reference_number
 
-                sheet_obj.cell(row=i, column=14).value = donation.donation_reference_number
-                sheet_obj.cell(row=i, column=15).value = "COMPLETED"
+                sheet_obj.cell(row=i, column=15).value = donation.donation_reference_number
+                sheet_obj.cell(row=i, column=16).value = "COMPLETED"
                 logging.info(f"Row: {i} , donor: {donation.name} updated successfully")
             wb_obj.save(excel_filename)
             
@@ -393,7 +397,12 @@ def updateFormContents(form_content):
     data = form_content
     logging.debug(f"Update form contents. Request : {data}")
     content, status = sendPost("https://danamojo.org/dm/widget/create", headers, data)
-    donaton_info_id = json.loads(content)["donationInfoId"]
+    donaton_info_id = ""
+    try:
+        donaton_info_id = json.loads(content)["donationInfoId"]
+    except (json.decoder.JSONDecodeError, KeyError):
+        logging.error(f"Danamojo did not accept the donor data. Response : {content}, status: {status}")
+        exit()
     logging.debug(f"Donation Id : {donaton_info_id}")
     return donaton_info_id
 
