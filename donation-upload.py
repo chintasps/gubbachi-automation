@@ -6,6 +6,7 @@ from http.client import HTTPConnection
 import re
 import json
 import time
+import urllib.parse
 
 
 class Donation:
@@ -124,11 +125,11 @@ def main():
             amount = sheet_obj.cell(row = i, column = 2)
             donation.amount = amount.value
             name = sheet_obj.cell(row = i, column = 3)
-            donation.name = name.value
+            donation.name = urllib.parse.quote(name.value)
             nationality = sheet_obj.cell(row = i, column = 4)
             donation.nationality = nationality.value
             address = sheet_obj.cell(row = i, column = 5)
-            donation.address = address.value
+            donation.address = urllib.parse.quote(address.value)
             pin = sheet_obj.cell(row = i, column = 6)
             donation.pin = pin.value
             country = sheet_obj.cell(row = i, column = 7)
