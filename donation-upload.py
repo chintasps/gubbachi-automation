@@ -7,10 +7,12 @@ import re
 import json
 import time
 import urllib.parse
+import ipaddress
 
 
 class Donation:
-
+    
+    public_ip = requests.get('https://checkip.amazonaws.com').text.strip()
     def __init__(self):
         self.amount = 0
         self.name = ""
@@ -24,7 +26,12 @@ class Donation:
         self.email = ""
         self.mobile = 0
         self.transaction_number = 0
-        self.ip = requests.get('https://ipapi.co/ip/').text # Possibly expensive. But I dont think any more complexity is needed for this project at this time
+        #self.ip = requests.get('https://ipapi.co/ip/').text # Possibly expensive. But I dont think any more complexity is needed for this project at this time
+        # Above approach failed to work due to rate limiting by ipapi. The below approach is not great as well cause we still are dependant on external API, 
+        # but hope amazon is more forgiving on rate limits
+        # self.ip = requests.get('https://checkip.amazonaws.com').text.strip()
+        self.ip = Donation.public_ip
+        # print(f"IP:{self.ip}")
         self._transaction_date = ""
 
 
@@ -79,13 +86,21 @@ class Donation:
             logging.error(f"Donor mobile is invalid. Mobile: {self.mobile}")
             return False
         elif self.transaction_number == None:
-            logging.error(f"Donation transacton number is invalid. Transaction #: {self.transaction_number}")
+            logging.error(f"Donation transaction number is invalid. Transaction #: {self.transaction_number}")
             return False
+        elif self.ip :
+            try:
+                # print(f"Self.ip:{self.ip}")
+                ip_object = ipaddress.ip_address(self.ip)
+            except ValueError:
+                logging.error(f"IP address is invalid. IP address : {self.ip}")
+                return False
         return True
         
         
 
 extensive_logging_enabled = False
+#extensive_logging_enabled = True
 
 
 def main():
@@ -271,10 +286,11 @@ def captureDmToken(content):
 def captureCsrfForPayment(content):
     logging.debug(f"Capturing Csrf For Payment")
     #regex = "name=\"_csrf\"( value=\"value=\")(.*)\">"
-    regex = "_csrf"
+    regex = 'name="_csrf(.*)value="(.*)">'
+    #regex = "_csrf"
     match = re.search(regex, content)
     if match:
-        sub_string = match.group()
+        sub_string = match.group(2)
         csrf = sub_string
         return csrf
     else:
@@ -282,8 +298,8 @@ def captureCsrfForPayment(content):
         return None
 
 def frameFormResponse(donation):
-    
-    form_response = ( f"_csrf={donation.csrf_token}"
+    encoded_csrf = urllib.parse.quote_plus(donation.csrf_token) 
+    form_response = ( f"_csrf={encoded_csrf}"
                      "&product_qty=0"
                      "&productInfo%5B7164%5D%5BdonationProductType%5D=2"
                      "&productInfo%5B7164%5D%5BdonationProductName%5D=Train+a+teacher+for+our+specialised+education+programmes"
@@ -463,15 +479,24 @@ def submitPaymentInfo(csrf_token, donatino_info_id, donation_date, transaction_n
     }
 
 
-    data = ("_csrf=4CRcz_1bpyX6Im_WrEPwAW9lVcWthcEfT7gdUnitN-CmZTaBmR_tZ6MRVpOeFoVWNz0DkPzyqEc_zXYzKd5ntA%3D%3D"
-            f"&DonationInfo[donationInfoId]={donatino_info_id}"
-            f"&DonationInfo[chequeDraftDate]={donation_date}"
-            f"&DonationInfo[trackingNumber]={transaction_number}"
-            "&DonationInfo[formName]=bank_transfer"
-            "&DonationInfo[paymentStatus]=1"
-            "&DonationInfo[paymentOption]=6"
-    )
+    #data = ("_csrf=4CRcz_1bpyX6Im_WrEPwAW9lVcWthcEfT7gdUnitN-CmZTaBmR_tZ6MRVpOeFoVWNz0DkPzyqEc_zXYzKd5ntA%3D%3D"
+    #        f"&DonationInfo[donationInfoId]={donatino_info_id}"
+    #        f"&DonationInfo[chequeDraftDate]={donation_date}"
+    #        f"&DonationInfo[trackingNumber]={transaction_number}"
+    #        "&DonationInfo[formName]=bank_transfer"
+    #        "&DonationInfo[paymentStatus]=1"
+    #        "&DonationInfo[paymentOption]=6"
 
+    data = (f"_csrf={urllib.parse.quote_plus(csrf_token)}"
+            f"&DonationInfo%5BdonationInfoId%5D={donatino_info_id}"
+            f"&DonationInfo%5BchequeDraftDate%5D={donation_date}"
+            f"&DonationInfo%5BtrackingNumber%5D={transaction_number}"
+            "&DonationInfo%5BformName%5D=bank_transfer"
+            "&DonationInfo%5BpaymentStatus%5D=1"
+            "&DonationInfo%5BpaymentOption%5D=6"
+
+    )
+     
     logging.debug(f"Submit payment. Data: {data}")
     content, status = sendPost("https://danamojo.org/dm/widget/updatepaymentdetails", headers, data)
     donation_refernce_string = json.loads(content)["data"]
